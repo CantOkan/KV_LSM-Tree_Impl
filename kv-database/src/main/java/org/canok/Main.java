@@ -6,7 +6,7 @@ import org.canok.lsmtree.data.DataRecord;
 
 public class Main {
     private static final int MEMTABLE_SIZE = 5;
-    private static final int SSTALBE_COMPACTION_SIZE = 2;
+    private static final int SSTALBE_COMPACTION_SIZE = 5;
 
     public static void main(String[] args) {
 
@@ -17,13 +17,11 @@ public class Main {
         DataRecord dataRecord = new DataRecord(1, "oldValue");
         dataStorage.insert(dataRecord);
 
-
         dataRecord = new DataRecord(2, "oldValue");
         dataStorage.insert(dataRecord);
 
         dataRecord = new DataRecord(3, "oldValue");
         dataStorage.insert(dataRecord);
-
 
         dataRecord = new DataRecord(4, "valuenew");
         dataStorage.insert(dataRecord);
