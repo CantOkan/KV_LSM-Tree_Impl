@@ -1,7 +1,8 @@
-package org.canok.lsmtree.sstable;
+package org.canok.sstable;
 
 
-import org.canok.lsmtree.sstable.immutable.SparseIndex;
+import org.canok.lsmtree.data.DataRecord;
+import org.canok.sstable.immutable.SparseIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,11 @@ public class SSTable {
                 appendSparseIndex(data[0], offset);
                 offset++;
             }
+
+            writer.flush();
+            writer.close();
+            BufferedReader reader = new BufferedReader(new FileReader(fileName));
+
             log.info("Data written to file successfully.");
         } catch (IOException e) {
             log.error("Error writing to file: {}", e.getMessage());
@@ -83,4 +89,47 @@ public class SSTable {
         }
     }
 
+    public List<DataRecord> getAllData() {
+        List<DataRecord> allData = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                DataRecord dataRecord = getDataRecordFromLine(line);
+                if (dataRecord != null) {
+                    allData.add(dataRecord);
+                }
+            }
+        } catch (IOException e) {
+            log.error("Error reading file: {}", e.getMessage());
+        }
+        return allData;
+    }
+
+    private DataRecord getDataRecordFromLine(String line) {
+        String[] parts = line.split(",");
+        if (parts.length != 2) {
+            log.warn("Invalid line format: {}", line);
+            return null;
+        }
+
+        String[] keyValuePair = parts[0].split(":");
+        if (keyValuePair.length != 2 || !keyValuePair[0].trim().equals("Key")) {
+            log.warn("Invalid key-value format: {}", parts[0]);
+            return null;
+        }
+
+        String keyString = keyValuePair[1].trim();
+        try {
+            Integer key = Integer.parseInt(keyString);
+            String value = parts[1].trim();
+            return new DataRecord(key, value);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid key format: {}", keyString);
+            return null;
+        }
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
 }

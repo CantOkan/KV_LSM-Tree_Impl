@@ -4,7 +4,7 @@ import org.canok.lsmtree.data.DataRecord;
 import org.canok.lsmtree.data.Operation;
 import org.canok.lsmtree.immutable.WriteAheadLog;
 import org.canok.lsmtree.memtable.Memtable;
-import org.canok.lsmtree.sstable.SSTable;
+import org.canok.sstable.SSTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,14 +17,13 @@ public class LsmTree {
     public static final Logger log = LoggerFactory.getLogger(LsmTree.class);
 
     private final Memtable memtable;
-    private final int MEMTABLE_SIZE;
+    private final int memTableSize;
     private final WriteAheadLog writeAheadLog;
-    private SSTable ssTable;
 
     public LsmTree(Integer memtableSize) {
         this.memtable = new Memtable();
         this.writeAheadLog = new WriteAheadLog();
-        this.MEMTABLE_SIZE = memtableSize;
+        this.memTableSize = memtableSize;
         this.initialize();
     }
 
@@ -66,7 +65,6 @@ public class LsmTree {
     }
 
     public void insert(DataRecord dataRecord) {
-        checkSize();
         memtable.insert(dataRecord);
         writeAheadLog.insert(dataRecord, Operation.Insert);
         log.info("Insert into memtable: " + dataRecord);
@@ -86,17 +84,10 @@ public class LsmTree {
 
     public Optional<String> getValue(Integer key) {
         String value = memtable.getValue(key);
-        Optional<String> result = value == null ? Optional.empty() : Optional.of(value);
-        if (!result.isPresent()) {
-            Optional<String> ssTableValue = ssTable.getValue(key);
-            if (ssTableValue.isPresent()) {
-                return ssTableValue;
-            }
-        }
-        return result;
+        return value == null ? Optional.empty() : Optional.of(value);
     }
 
-    public void flush() {
+    public void flush(SSTable ssTable) {
         log.info("flushes tree and persist data into SSTable");
         String[][] insertedDatas = memtable.getAll();
         ssTable.write(insertedDatas);
@@ -104,17 +95,9 @@ public class LsmTree {
         writeAheadLog.clear();
     }
 
-    public void generateSSTable(){
-        long currentTimestamp = System.currentTimeMillis();
-        ssTable=new SSTable(currentTimestamp);
-    }
 
-
-    public void checkSize() {
-        if (memtable.getSize() >= MEMTABLE_SIZE) {
-            generateSSTable();
-            flush();
-        }
+    public boolean isMemAvailable() {
+        return memtable.getSize() < memTableSize;
     }
 
 }

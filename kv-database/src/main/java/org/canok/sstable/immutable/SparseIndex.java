@@ -1,6 +1,6 @@
-package org.canok.lsmtree.sstable.immutable;
+package org.canok.sstable.immutable;
 
-import org.canok.lsmtree.sstable.SSTable;
+import org.canok.sstable.SSTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.UUID;
 
 public class SparseIndex {
 
@@ -39,6 +38,10 @@ public class SparseIndex {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
             writer.write("Key: " + key + ", Offset: " + offset);
             writer.newLine();
+
+            writer.flush();
+            writer.close();
+            BufferedReader reader = new BufferedReader(new FileReader(fileName));
             log.info("Data written to file successfully.");
         } catch (IOException e) {
             log.error("Error writing to file: {}", e.getMessage());
